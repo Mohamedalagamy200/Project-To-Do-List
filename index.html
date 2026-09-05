@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Focusly - A clean productivity dashboard for managing tasks, priorities and progress.">
+  <title>Focusly — Productivity Dashboard</title>
+
+  <!-- Prevent theme flash -->
+  <script>
+    (() => {
+      const savedTheme = localStorage.getItem("focusly-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="dist/style.css">
+</head>
+
+<body class="min-h-screen bg-gray-100 text-gray-900 transition-colors duration-200 dark:bg-gray-950 dark:text-gray-100">
+
+  <!-- Mobile Overlay -->
+  <div id="sidebarOverlay" class="sidebar-overlay hidden" aria-hidden="true"></div>
+
+  <!-- Mobile Sidebar -->
+  <aside
+    id="mobileSidebar"
+    class="sidebar mobile-sidebar"
+    aria-label="Mobile navigation"
+  >
+    <div class="sidebar-content">
+      <div class="flex items-center justify-between">
+        <a href="#" class="flex items-center gap-3" aria-label="Focusly home">
+          <span class="logo-mark">
+            <i data-lucide="check" class="h-5 w-5"></i>
+          </span>
+          <span class="text-xl font-bold tracking-tight">Focusly</span>
+        </a>
+
+        <button
+          id="closeMobileMenu"
+          type="button"
+          class="icon-button"
+          aria-label="Close menu"
+        >
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <nav class="mt-8" aria-label="Primary navigation">
+        <p class="section-label">Workspace</p>
+
+        <div class="nav-list">
+          <button class="nav-item active" type="button" data-view="all">
+            <i data-lucide="inbox"></i>
+            <span>All Tasks</span>
+            <span id="allTasksCount" class="nav-count">0</span>
+          </button>
+
+          <button class="nav-item" type="button" data-view="today">
+            <i data-lucide="calendar-days"></i>
+            <span>Today</span>
+          </button>
+
+          <button class="nav-item" type="button" data-view="upcoming">
+            <i data-lucide="calendar-clock"></i>
+            <span>Upcoming</span>
+          </button>
+
+          <button class="nav-item" type="button" data-view="completed">
+            <i data-lucide="circle-check"></i>
+            <span>Completed</span>
+            <span id="completedNavCount" class="nav-count">0</span>
+          </button>
+        </div>
+
+        <div class="mt-8">
+          <div class="flex items-center justify-between">
+            <p class="section-label mb-0">Categories</p>
+
+            <button
+              id="addCategoryBtnMobile"
+              type="button"
+              class="category-add-button"
+              aria-label="Add category"
+              title="Add category"
+            >
+              <i data-lucide="plus"></i>
+            </button>
+          </div>
+
+          <div class="nav-list mt-3" data-category-list></div>
+        </div>
+      </nav>
+
+      <div class="mt-auto pt-8">
+        <button id="darkModeToggleMobile" type="button" class="theme-toggle">
+          <span class="flex items-center gap-3">
+            <i data-lucide="moon"></i>
+            <span>Dark mode</span>
+          </span>
+
+          <span class="toggle-track">
+            <span class="toggle-thumb"></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Desktop Sidebar -->
+  <aside class="sidebar desktop-sidebar" aria-label="Main navigation">
+    <div class="sidebar-content">
+
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-3" aria-label="Focusly home">
+        <span class="logo-mark">
+          <i data-lucide="check" class="h-5 w-5"></i>
+        </span>
+
+        <span class="text-xl font-bold tracking-tight">Focusly</span>
+      </a>
+
+      <!-- Navigation -->
+      <nav class="mt-10" aria-label="Primary navigation">
+
+        <p class="section-label">Workspace</p>
+
+        <div class="nav-list">
+          <button class="nav-item active" type="button" data-view="all">
+            <i data-lucide="inbox"></i>
+            <span>All Tasks</span>
+            <span id="desktopAllTasksCount" class="nav-count">0</span>
+          </button>
+
+          <button class="nav-item" type="button" data-view="today">
+            <i data-lucide="calendar-days"></i>
+            <span>Today</span>
+          </button>
+
+          <button class="nav-item" type="button" data-view="upcoming">
+            <i data-lucide="calendar-clock"></i>
+            <span>Upcoming</span>
+          </button>
+
+          <button class="nav-item" type="button" data-view="completed">
+            <i data-lucide="circle-check"></i>
+            <span>Completed</span>
+            <span id="desktopCompletedNavCount" class="nav-count">0</span>
+          </button>
+        </div>
+
+        <!-- Categories -->
+        <div class="mt-8">
+          <div class="flex items-center justify-between">
+            <p class="section-label mb-0">Categories</p>
+
+            <button
+              id="addCategoryBtn"
+              type="button"
+              class="category-add-button"
+              aria-label="Add category"
+              title="Add category"
+            >
+              <i data-lucide="plus"></i>
+            </button>
+          </div>
+
+          <div class="nav-list mt-3" data-category-list></div>
+        </div>
+      </nav>
+
+      <!-- Bottom Controls -->
+      <div class="mt-auto space-y-2 pt-8">
+
+        <button id="darkModeToggle" type="button" class="theme-toggle">
+          <span class="flex items-center gap-3">
+            <i data-lucide="moon"></i>
+            <span>Dark mode</span>
+          </span>
+
+          <span class="toggle-track">
+            <span class="toggle-thumb"></span>
+          </span>
+        </button>
+
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Application -->
+  <div class="app-shell">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <button
+        id="mobileMenuButton"
+        type="button"
+        class="icon-button"
+        aria-label="Open navigation menu"
+        aria-controls="mobileSidebar"
+        aria-expanded="false"
+      >
+        <i data-lucide="menu"></i>
+      </button>
+
+      <a href="#" class="flex items-center gap-2" aria-label="Focusly home">
+        <span class="logo-mark small">
+          <i data-lucide="check"></i>
+        </span>
+        <span class="font-bold">Focusly</span>
+      </a>
+
+      <button
+        id="mobileQuickAdd"
+        type="button"
+        class="icon-button primary-icon-button"
+        aria-label="Add task"
+      >
+        <i data-lucide="plus"></i>
+      </button>
+    </header>
+
+    <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+
+      <!-- Dashboard Header -->
+      <section class="mb-7">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+
+          <div>
+            <p id="currentDate" class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+              Saturday, September 5, 2026
+            </p>
+
+            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">
+              Good morning, Mohamed
+            </h1>
+
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Let's make today productive.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3">
+
+            <!-- Search -->
+            <div class="search-wrapper">
+              <i data-lucide="search"></i>
+
+              <label for="searchInput" class="sr-only">
+                Search tasks
+              </label>
+
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Search tasks..."
+                autocomplete="off"
+              >
+
+              <kbd class="search-shortcut">/</kbd>
+            </div>
+
+            <!-- Notifications -->
+            <button
+              id="notificationButton"
+              type="button"
+              class="icon-button hidden sm:flex"
+              aria-label="Notifications"
+            >
+              <i data-lucide="bell"></i>
+              <span class="notification-dot"></span>
+            </button>
+
+            <!-- User -->
+            <button
+              type="button"
+              class="avatar"
+              aria-label="Mohamed profile"
+              title="Mohamed"
+            >
+              MA
+            </button>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Statistics -->
+      <section aria-labelledby="statisticsHeading" class="mb-7">
+        <h2 id="statisticsHeading" class="sr-only">Task statistics</h2>
+
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+
+          <article class="stat-card">
+            <div class="stat-icon bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+              <i data-lucide="list-checks"></i>
+            </div>
+
+            <div>
+              <p class="stat-label">Total tasks</p>
+              <p id="totalTasks" class="stat-value">0</p>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+              <i data-lucide="circle-check-big"></i>
+            </div>
+
+            <div>
+              <p class="stat-label">Completed</p>
+              <p id="completedTasks" class="stat-value">0</p>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+              <i data-lucide="clock-3"></i>
+            </div>
+
+            <div>
+              <p class="stat-label">Pending</p>
+              <p id="pendingTasks" class="stat-value">0</p>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+              <i data-lucide="chart-no-axes-combined"></i>
+            </div>
+
+            <div>
+              <p class="stat-label">Completion</p>
+              <p id="completionPercentage" class="stat-value">0%</p>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- Add Task -->
+      <section id="addTaskSection" class="panel mb-7">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Add a new task</h2>
+            <p class="panel-subtitle">
+              Capture what needs to get done.
+            </p>
+          </div>
+
+          <span class="panel-icon">
+            <i data-lucide="square-plus"></i>
+          </span>
+        </div>
+
+        <form id="taskForm" novalidate>
+
+          <div class="grid gap-5 lg:grid-cols-2">
+
+            <!-- Title -->
+            <div class="lg:col-span-2">
+              <label for="taskTitle" class="form-label">
+                Task title <span class="required">*</span>
+              </label>
+
+              <input
+                id="taskTitle"
+                name="title"
+                type="text"
+                class="form-input"
+                placeholder="e.g. Finish project presentation"
+                maxlength="100"
+                required
+                aria-describedby="titleError"
+              >
+
+              <p id="titleError" class="form-error hidden"></p>
+            </div>
+
+            <!-- Description -->
+            <div class="lg:col-span-2">
+              <label for="taskDescription" class="form-label">
+                Description
+              </label>
+
+              <textarea
+                id="taskDescription"
+                name="description"
+                class="form-input min-h-24 resize-y"
+                placeholder="Add some details about this task..."
+                maxlength="500"
+              ></textarea>
+            </div>
+
+            <!-- Due Date -->
+            <div>
+              <label for="taskDueDate" class="form-label">
+                Due date <span class="required">*</span>
+              </label>
+
+              <input
+                id="taskDueDate"
+                name="dueDate"
+                type="date"
+                class="form-input"
+                required
+                aria-describedby="dueDateError"
+              >
+
+              <p id="dueDateError" class="form-error hidden"></p>
+            </div>
+
+            <!-- Priority -->
+            <div>
+              <label for="taskPriority" class="form-label">
+                Priority
+              </label>
+
+              <select id="taskPriority" name="priority" class="form-input">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+
+            <!-- Category -->
+            <div>
+              <label for="taskCategory" class="form-label">
+                Category
+              </label>
+
+              <select id="taskCategory" name="category" class="form-input" data-category-select>
+                <option value="Personal">Personal</option>
+                <option value="Work">Work</option>
+                <option value="Study">Study</option>
+              </select>
+            </div>
+
+            <!-- Button -->
+            <div class="flex items-end">
+              <button type="submit" class="primary-button w-full">
+                <i data-lucide="plus"></i>
+                Add task
+              </button>
+            </div>
+
+          </div>
+        </form>
+      </section>
+
+      <!-- Progress -->
+      <section class="panel mb-7">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="panel-title">Today's progress</h2>
+              <span id="progressPercentageBadge" class="percentage-badge">0%</span>
+            </div>
+
+            <p id="progressText" class="panel-subtitle">
+              0 of 0 tasks completed
+            </p>
+          </div>
+
+          <button
+            id="clearCompletedButton"
+            type="button"
+            class="secondary-button"
+          >
+            <i data-lucide="trash-2"></i>
+            Clear completed
+          </button>
+
+        </div>
+
+        <div
+          class="progress-track mt-5"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-label="Task completion progress"
+        >
+          <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+        </div>
+      </section>
+
+      <!-- Task List -->
+      <section id="taskListSection" aria-labelledby="taskListHeading">
+
+        <div class="mb-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+
+          <div>
+            <h2 id="taskListHeading" class="text-xl font-bold" tabindex="-1">
+              <span id="taskListTitle">All tasks</span>
+            </h2>
+
+            <p id="taskListSubtitle" class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Keep your priorities clear and your momentum strong.
+            </p>
+          </div>
+
+          <!-- Filters -->
+          <div
+            id="filterGroup"
+            class="filter-container"
+            role="group"
+            aria-label="Task filters"
+          >
+            <button type="button" class="filter-button active" data-filter="all">
+              All
+            </button>
+
+            <button type="button" class="filter-button" data-filter="active">
+              Active
+            </button>
+
+            <button type="button" class="filter-button" data-filter="completed">
+              Completed
+            </button>
+
+            <button type="button" class="filter-button" data-filter="high">
+              High Priority
+            </button>
+
+            <button type="button" class="filter-button" data-filter="today">
+              Today
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Tasks -->
+        <div id="taskList" class="space-y-3"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state hidden">
+          <div class="empty-icon">
+            <i data-lucide="clipboard-check"></i>
+          </div>
+
+          <h3 id="emptyStateTitle" class="text-lg font-bold">
+            No tasks found
+          </h3>
+
+          <p id="emptyStateText" class="mt-1 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+            Try changing your filters or add a new task to get started.
+          </p>
+
+          <button id="emptyStateAddButton" type="button" class="primary-button mt-5">
+            <i data-lucide="plus"></i>
+            Add a task
+          </button>
+        </div>
+
+      </section>
+
+      <!-- Demo Controls -->
+      <section class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-6 dark:border-gray-800">
+
+        <p class="text-xs text-gray-500 dark:text-gray-500">
+          Focusly stores your tasks locally in this browser.
+        </p>
+
+        <button
+          id="resetDemoButton"
+          type="button"
+          class="text-xs font-semibold text-gray-500 transition hover:text-danger dark:text-gray-400"
+        >
+          Reset demo data
+        </button>
+
+      </section>
+
+      <footer class="site-footer" aria-label="Contact links">
+        <p>Made by Mohamed</p>
+
+        <div class="social-links">
+          <a
+            href="https://www.linkedin.com/in/mohamed-el-sayed-al-ajmi/"
+            class="social-link"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Mohamed on LinkedIn"
+            title="LinkedIn"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.95v5.66H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM3.54 9H7.1v11.45H3.54V9z"/>
+            </svg>
+          </a>
+
+          <a
+            href="https://github.com/Mohamedalagamy200"
+            class="social-link"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Mohamed on GitHub"
+            title="GitHub"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 .67a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.4-1.34-1.77-1.34-1.77-1.09-.75.08-.74.08-.74 1.2.08 1.83 1.24 1.83 1.24 1.07 1.83 2.8 1.3 3.48.99.11-.77.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.45 11.45 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.62-2.8 5.64-5.48 5.94.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .67"/>
+            </svg>
+          </a>
+
+          <a
+            href="mailto:mohamedalagamy606@gmail.com"
+            class="social-link"
+            aria-label="Email Mohamed"
+            title="Email"
+          >
+            <i data-lucide="mail"></i>
+          </a>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- Edit Modal -->
+  <div
+    id="editModal"
+    class="modal-backdrop hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="editModalTitle"
+  >
+    <div class="modal">
+
+      <div class="modal-header">
+        <div>
+          <h2 id="editModalTitle" class="text-lg font-bold">
+            Edit task
+          </h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Update your task details.
+          </p>
+        </div>
+
+        <button
+          id="closeEditModal"
+          type="button"
+          class="icon-button"
+          aria-label="Close edit dialog"
+        >
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="editTaskForm" class="mt-6" novalidate>
+
+        <input id="editTaskId" type="hidden">
+
+        <div class="space-y-5">
+
+          <div>
+            <label for="editTaskTitle" class="form-label">
+              Task title <span class="required">*</span>
+            </label>
+
+            <input
+              id="editTaskTitle"
+              type="text"
+              class="form-input"
+              maxlength="100"
+              required
+            >
+
+            <p id="editTitleError" class="form-error hidden"></p>
+          </div>
+
+          <div>
+            <label for="editTaskDescription" class="form-label">
+              Description
+            </label>
+
+            <textarea
+              id="editTaskDescription"
+              class="form-input min-h-24 resize-y"
+              maxlength="500"
+            ></textarea>
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+
+            <div>
+              <label for="editTaskDueDate" class="form-label">
+                Due date <span class="required">*</span>
+              </label>
+
+              <input
+                id="editTaskDueDate"
+                type="date"
+                class="form-input"
+                required
+              >
+
+              <p id="editDateError" class="form-error hidden"></p>
+            </div>
+
+            <div>
+              <label for="editTaskPriority" class="form-label">
+                Priority
+              </label>
+
+              <select id="editTaskPriority" class="form-input">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label for="editTaskCategory" class="form-label">
+                Category
+              </label>
+
+              <select id="editTaskCategory" class="form-input" data-category-select>
+                <option value="Personal">Personal</option>
+                <option value="Work">Work</option>
+                <option value="Study">Study</option>
+              </select>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="modal-actions">
+          <button id="cancelEditButton" type="button" class="secondary-button">
+            Cancel
+          </button>
+
+          <button type="submit" class="primary-button">
+            <i data-lucide="save"></i>
+            Save changes
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div
+    id="deleteModal"
+    class="modal-backdrop hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="deleteModalTitle"
+  >
+    <div class="modal max-w-md">
+
+      <div class="flex items-start gap-4">
+        <div class="danger-modal-icon">
+          <i data-lucide="trash-2"></i>
+        </div>
+
+        <div class="flex-1">
+          <h2 id="deleteModalTitle" class="text-lg font-bold">
+            Delete this task?
+          </h2>
+
+          <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+            This action cannot be undone. The task will be permanently removed
+            from this browser.
+          </p>
+        </div>
+
+        <button
+          id="closeDeleteModal"
+          type="button"
+          class="icon-button"
+          aria-label="Close delete dialog"
+        >
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <p
+        id="deleteTaskName"
+        class="mt-5 rounded-xl bg-gray-50 p-3 text-sm font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+      ></p>
+
+      <div class="modal-actions">
+        <button id="cancelDeleteButton" type="button" class="secondary-button">
+          Cancel
+        </button>
+
+        <button id="confirmDeleteButton" type="button" class="danger-button">
+          <i data-lucide="trash-2"></i>
+          Delete task
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div
+    id="toastContainer"
+    class="toast-container"
+    aria-live="polite"
+    aria-atomic="true"
+  ></div>
+
+  <script src="src/js/script.js"></script>
+</body>
+</html>
