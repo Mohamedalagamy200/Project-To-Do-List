@@ -8,70 +8,24 @@
 const STORAGE_KEYS = {
   tasks: "focusly-tasks",
   theme: "focusly-theme",
-  initialized: "focusly-initialized",
-  categories: "focusly-categories"
+  categories: "focusly-categories",
+  userName: "focusly-user-name"
 };
 
 const DEFAULT_CATEGORIES = ["Personal", "Work", "Study"];
+const LEGACY_DEMO_TITLES = new Set([
+  "Review weekly goals",
+  "Study JavaScript",
+  "Morning workout",
+  "Prepare project presentation",
+  "Read design article"
+]);
 
 const PRIORITY_WEIGHT = {
   High: 0,
   Medium: 1,
   Low: 2
 };
-
-const SAMPLE_TASKS = [
-  {
-    id: "demo-1",
-    title: "Review weekly goals",
-    description: "Review progress from this week and define the most important priorities.",
-    dueDate: getRelativeDate(0),
-    priority: "High",
-    category: "Work",
-    completed: false,
-    createdAt: Date.now() - 5000
-  },
-  {
-    id: "demo-2",
-    title: "Study JavaScript",
-    description: "Complete the next module and practice DOM manipulation exercises.",
-    dueDate: getRelativeDate(1),
-    priority: "Medium",
-    category: "Study",
-    completed: false,
-    createdAt: Date.now() - 4000
-  },
-  {
-    id: "demo-3",
-    title: "Morning workout",
-    description: "30-minute workout and a short stretching session.",
-    dueDate: getRelativeDate(0),
-    priority: "Low",
-    category: "Personal",
-    completed: true,
-    createdAt: Date.now() - 3000
-  },
-  {
-    id: "demo-4",
-    title: "Prepare project presentation",
-    description: "Finish the slides and prepare talking points for the next meeting.",
-    dueDate: getRelativeDate(3),
-    priority: "High",
-    category: "Work",
-    completed: false,
-    createdAt: Date.now() - 2000
-  },
-  {
-    id: "demo-5",
-    title: "Read design article",
-    description: "Read the saved UI/UX article and capture useful design principles.",
-    dueDate: getRelativeDate(-1),
-    priority: "Low",
-    category: "Study",
-    completed: false,
-    createdAt: Date.now() - 1000
-  }
-];
 
 /* =========================================================
    Application State
@@ -80,6 +34,7 @@ const SAMPLE_TASKS = [
 const state = {
   tasks: [],
   categories: [],
+  userName: "",
   filter: "all",
   view: "all",
   searchQuery: "",
@@ -108,6 +63,8 @@ const elements = {
   dueDateError: document.getElementById("dueDateError"),
 
   searchInput: document.getElementById("searchInput"),
+  searchSubmitButton: document.getElementById("searchSubmitButton"),
+  searchSuggestions: document.getElementById("searchSuggestions"),
 
   taskList: document.getElementById("taskList"),
   taskListSection: document.getElementById("taskListSection"),
@@ -131,9 +88,14 @@ const elements = {
   progressPercentageBadge: document.getElementById("progressPercentageBadge"),
 
   clearCompletedButton: document.getElementById("clearCompletedButton"),
-  resetDemoButton: document.getElementById("resetDemoButton"),
 
   currentDate: document.getElementById("currentDate"),
+  userName: document.getElementById("userName"),
+  userAvatar: document.getElementById("userAvatar"),
+  welcomeModal: document.getElementById("welcomeModal"),
+  welcomeForm: document.getElementById("welcomeForm"),
+  userNameInput: document.getElementById("userNameInput"),
+  userNameError: document.getElementById("userNameError"),
 
   editModal: document.getElementById("editModal"),
   editTaskForm: document.getElementById("editTaskForm"),
@@ -183,12 +145,17 @@ const elements = {
 document.addEventListener("DOMContentLoaded", init);
 
 function init() {
+  loadUserProfile();
   loadTasks();
   setupTheme();
   setupEventListeners();
   setMinimumDates();
   updateCurrentDate();
   render();
+
+  if (!state.userName) {
+    openWelcomeModal();
+  }
 
   if (window.lucide) {
     lucide.createIcons();
@@ -202,29 +169,27 @@ function init() {
 function loadTasks() {
   try {
     const storedTasks = localStorage.getItem(STORAGE_KEYS.tasks);
-    const initialized = localStorage.getItem(STORAGE_KEYS.initialized);
 
     if (storedTasks) {
       const parsedTasks = JSON.parse(storedTasks);
 
       if (Array.isArray(parsedTasks)) {
         state.tasks = parsedTasks.map(normalizeTask);
+
+        const isLegacyDemo =
+          !state.userName &&
+          state.tasks.length > 0 &&
+          state.tasks.every(task =>
+            LEGACY_DEMO_TITLES.has(task.title)
+          );
+
+        if (isLegacyDemo) {
+          state.tasks = [];
+          saveTasks();
+        }
       } else {
         state.tasks = [];
       }
-    }
-
-    /*
-     * Sample data is added only the first time Focusly
-     * is opened in this browser.
-     */
-    if (!initialized && !storedTasks) {
-      state.tasks = SAMPLE_TASKS.map(task => ({ ...task }));
-      localStorage.setItem(
-        STORAGE_KEYS.initialized,
-        "true"
-      );
-      saveTasks();
     }
 
   } catch (error) {
@@ -237,6 +202,14 @@ function loadTasks() {
   }
 
   loadCategories();
+}
+
+function loadUserProfile() {
+  state.userName = (localStorage.getItem(STORAGE_KEYS.userName) || "").trim();
+}
+
+function saveUserProfile() {
+  localStorage.setItem(STORAGE_KEYS.userName, state.userName);
 }
 
 function loadCategories() {
@@ -387,6 +360,59 @@ function setupEventListeners() {
     handleSearch
   );
 
+  elements.searchInput.addEventListener(
+    "focus",
+    () => {
+      if (elements.searchInput.value.trim()) {
+        requestAnimationFrame(() => {
+          renderSearchSuggestions();
+        });
+      }
+    }
+  );
+
+  elements.searchInput.addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submitSearch();
+      }
+    }
+  );
+
+  elements.searchSubmitButton.addEventListener(
+    "click",
+    event => {
+      event.stopPropagation();
+      submitSearch();
+    }
+  );
+
+  elements.searchSuggestions.addEventListener(
+    "click",
+    handleSearchSuggestionClick
+  );
+
+  elements.taskDueDate.addEventListener(
+    "click",
+    openDatePicker
+  );
+
+  elements.editTaskDueDate.addEventListener(
+    "click",
+    openDatePicker
+  );
+
+  document.addEventListener(
+    "click",
+    event => {
+      if (!event.target.closest(".search-wrapper")) {
+        elements.searchSuggestions.classList.add("hidden");
+      }
+    }
+  );
+
   /* Filters */
   elements.filterGroup.addEventListener(
     "click",
@@ -411,16 +437,16 @@ function setupEventListeners() {
     clearCompletedTasks
   );
 
-  /* Reset demo */
-  elements.resetDemoButton.addEventListener(
-    "click",
-    resetDemoData
-  );
-
   /* Empty state */
   elements.emptyStateAddButton.addEventListener(
     "click",
     focusAddTask
+  );
+
+  /* First-use profile */
+  elements.welcomeForm.addEventListener(
+    "submit",
+    handleWelcomeSubmit
   );
 
   /* Edit modal */
@@ -621,6 +647,7 @@ function handleAddTask(event) {
 ========================================================= */
 
 function render() {
+  renderUserProfile();
   renderCategories();
   renderStatistics();
   renderProgress();
@@ -632,6 +659,27 @@ function render() {
   if (window.lucide) {
     lucide.createIcons();
   }
+}
+
+function renderUserProfile() {
+  const displayName = state.userName || "there";
+  const profileName = state.userName || "User";
+  const initials = state.userName
+    ? state.userName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part[0].toUpperCase())
+      .join("")
+    : "?";
+
+  elements.userName.textContent = displayName;
+  elements.userAvatar.textContent = initials;
+  elements.userAvatar.setAttribute(
+    "aria-label",
+    `${profileName} profile`
+  );
+  elements.userAvatar.title = profileName;
 }
 
 function renderCategories() {
@@ -985,12 +1033,105 @@ function handleSearch(event) {
   state.searchQuery =
     event.target.value.trim();
 
+  renderSearchSuggestions();
   renderTaskList();
   updateFilterButtons();
 
   if (window.lucide) {
     lucide.createIcons();
   }
+}
+
+function submitSearch() {
+  state.searchQuery = elements.searchInput.value.trim();
+  renderSearchSuggestions();
+  renderTaskList();
+  updateNavigation();
+  updateFilterButtons();
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function renderSearchSuggestions() {
+  const query = elements.searchInput.value.trim().toLowerCase();
+  elements.searchSuggestions.innerHTML = "";
+
+  if (!query) {
+    elements.searchSuggestions.classList.add("hidden");
+    return;
+  }
+
+  const matches = state.tasks
+    .filter(task =>
+      task.title.toLowerCase().includes(query) ||
+      task.description.toLowerCase().includes(query)
+    )
+    .sort(sortTasks)
+    .slice(0, 6);
+
+  if (!matches.length) {
+    const empty = document.createElement("p");
+    empty.className = "search-suggestion-empty";
+    empty.textContent = "No matching tasks";
+    elements.searchSuggestions.appendChild(empty);
+  } else {
+    matches.forEach(task => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "search-suggestion";
+      button.dataset.taskId = task.id;
+      button.setAttribute("role", "option");
+
+      const title = document.createElement("strong");
+      title.textContent = task.title;
+
+      const description = document.createElement("span");
+      description.textContent = task.description || "No description provided.";
+
+      button.appendChild(title);
+      button.appendChild(description);
+      elements.searchSuggestions.appendChild(button);
+    });
+  }
+
+  elements.searchSuggestions.classList.remove("hidden");
+}
+
+function handleSearchSuggestionClick(event) {
+  const suggestion = event.target.closest("[data-task-id]");
+
+  if (!suggestion) {
+    return;
+  }
+
+  const task = state.tasks.find(item =>
+    item.id === suggestion.dataset.taskId
+  );
+
+  if (!task) {
+    return;
+  }
+
+  state.view = "all";
+  state.filter = "all";
+  state.selectedCategory = null;
+  state.searchQuery = task.title;
+  elements.searchInput.value = task.title;
+  renderSearchSuggestions();
+  render();
+
+  requestAnimationFrame(() => {
+    const card = document.querySelector(
+      `article.task-card[data-task-id="${CSS.escape(task.id)}"]`
+    );
+
+    card?.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  });
 }
 
 function handleNavigationClick(event) {
@@ -1525,7 +1666,9 @@ function handleKeyboard(event) {
 
   /* Tab focus trap */
   const activeModal =
-    !elements.editModal.classList.contains("hidden")
+    !elements.welcomeModal.classList.contains("hidden")
+      ? elements.welcomeModal
+      : !elements.editModal.classList.contains("hidden")
       ? elements.editModal
       : !elements.deleteModal.classList.contains("hidden")
         ? elements.deleteModal
@@ -1721,43 +1864,6 @@ function updateEmptyState() {
 }
 
 /* =========================================================
-   Reset Demo Data
-========================================================= */
-
-function resetDemoData() {
-  const confirmed =
-    window.confirm(
-      "Reset Focusly to the original demo tasks? Your current tasks will be replaced."
-    );
-
-  if (!confirmed) {
-    return;
-  }
-
-  state.tasks =
-    SAMPLE_TASKS.map(task => ({
-      ...task,
-      id: generateId(),
-      createdAt: Date.now()
-    }));
-
-  state.filter = "all";
-  state.view = "all";
-  state.searchQuery = "";
-  state.selectedCategory = null;
-
-  elements.searchInput.value = "";
-
-  saveTasks();
-  render();
-
-  showToast(
-    "Demo data has been restored.",
-    "success"
-  );
-}
-
-/* =========================================================
    Validation
 ========================================================= */
 
@@ -1781,6 +1887,59 @@ function showFieldError(
   errorElement.classList.remove("hidden");
 
   inputElement.classList.add("error");
+}
+
+function openWelcomeModal() {
+  elements.welcomeModal.classList.remove("hidden");
+  document.body.classList.add("overflow-hidden");
+
+  requestAnimationFrame(() => {
+    elements.userNameInput.focus();
+  });
+}
+
+function handleWelcomeSubmit(event) {
+  event.preventDefault();
+
+  const name = elements.userNameInput.value.trim();
+
+  if (!name) {
+    showFieldError(
+      elements.userNameError,
+      elements.userNameInput,
+      "Please enter your name."
+    );
+
+    elements.userNameInput.focus();
+    return;
+  }
+
+  state.userName = name;
+  saveUserProfile();
+
+  elements.userNameError.textContent = "";
+  elements.userNameError.classList.add("hidden");
+  elements.userNameInput.classList.remove("error");
+  elements.welcomeModal.classList.add("hidden");
+  document.body.classList.remove("overflow-hidden");
+
+  render();
+  showToast(`Welcome to Focusly, ${name}.`, "success");
+  elements.taskTitle.focus();
+}
+
+function openDatePicker(event) {
+  const input = event.currentTarget;
+
+  if (typeof input.showPicker !== "function") {
+    return;
+  }
+
+  try {
+    input.showPicker();
+  } catch (error) {
+    // The browser may already have opened its native picker.
+  }
 }
 
 /* =========================================================
@@ -1816,21 +1975,6 @@ function getTodayString() {
     String(now.getMonth() + 1).padStart(2, "0");
   const day =
     String(now.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function getRelativeDate(offset) {
-  const date = new Date();
-
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + offset);
-
-  const year = date.getFullYear();
-  const month =
-    String(date.getMonth() + 1).padStart(2, "0");
-  const day =
-    String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }

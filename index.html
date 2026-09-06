@@ -248,8 +248,8 @@
               Saturday, September 5, 2026
             </p>
 
-            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">
-              Good morning, Mohamed
+            <h1 id="greetingHeading" class="text-2xl font-bold tracking-tight sm:text-3xl">
+              Good morning, <span id="userName">there</span>
             </h1>
 
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -261,7 +261,15 @@
 
             <!-- Search -->
             <div class="search-wrapper">
-              <i data-lucide="search"></i>
+              <button
+                id="searchSubmitButton"
+                type="button"
+                class="search-icon-button"
+                aria-label="Search tasks"
+                title="Search tasks"
+              >
+                <i data-lucide="search"></i>
+              </button>
 
               <label for="searchInput" class="sr-only">
                 Search tasks
@@ -275,6 +283,13 @@
               >
 
               <kbd class="search-shortcut">/</kbd>
+
+              <div
+                id="searchSuggestions"
+                class="search-suggestions hidden"
+                role="listbox"
+                aria-label="Matching tasks"
+              ></div>
             </div>
 
             <!-- Notifications -->
@@ -292,10 +307,11 @@
             <button
               type="button"
               class="avatar"
-              aria-label="Mohamed profile"
-              title="Mohamed"
+              id="userAvatar"
+              aria-label="User profile"
+              title="User profile"
             >
-              MA
+              ?
             </button>
 
           </div>
@@ -573,22 +589,9 @@
 
       </section>
 
-      <!-- Demo Controls -->
-      <section class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-6 dark:border-gray-800">
-
-        <p class="text-xs text-gray-500 dark:text-gray-500">
-          Focusly stores your tasks locally in this browser.
-        </p>
-
-        <button
-          id="resetDemoButton"
-          type="button"
-          class="text-xs font-semibold text-gray-500 transition hover:text-danger dark:text-gray-400"
-        >
-          Reset demo data
-        </button>
-
-      </section>
+      <p class="mt-8 border-t border-gray-200 pt-6 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-500">
+        Focusly stores your tasks locally in this browser.
+      </p>
 
       <footer class="site-footer" aria-label="Contact links">
         <p>Made by Mohamed</p>
@@ -632,6 +635,52 @@
       </footer>
 
     </main>
+  </div>
+
+  <!-- First-use Welcome Modal -->
+  <div
+    id="welcomeModal"
+    class="modal-backdrop hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="welcomeModalTitle"
+  >
+    <div class="modal max-w-md">
+      <div class="welcome-icon">
+        <i data-lucide="sparkles"></i>
+      </div>
+
+      <h2 id="welcomeModalTitle" class="mt-5 text-xl font-bold">
+        Welcome to Focusly
+      </h2>
+
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        Tell us your name so we can personalize your workspace.
+      </p>
+
+      <form id="welcomeForm" class="mt-6" novalidate>
+        <label for="userNameInput" class="form-label">
+          Your name <span class="required">*</span>
+        </label>
+
+        <input
+          id="userNameInput"
+          class="form-input"
+          type="text"
+          maxlength="40"
+          autocomplete="name"
+          placeholder="e.g. Mohamed"
+          required
+        >
+
+        <p id="userNameError" class="form-error hidden"></p>
+
+        <button type="submit" class="primary-button mt-5 w-full">
+          Continue
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </form>
+    </div>
   </div>
 
   <!-- Edit Modal -->

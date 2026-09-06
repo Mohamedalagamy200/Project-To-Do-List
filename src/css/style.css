@@ -620,6 +620,10 @@ textarea.form-input {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
 }
 
+.form-input[type="date"] {
+  cursor: pointer;
+}
+
 .form-input.error {
   border-color: var(--danger);
 }
@@ -1175,6 +1179,27 @@ textarea.form-input {
   gap: 20px;
 }
 
+.welcome-icon {
+  display: flex;
+  width: 46px;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background: #eef2ff;
+  color: var(--primary);
+}
+
+.dark .welcome-icon {
+  background: rgba(79, 70, 229, 0.14);
+  color: #a5b4fc;
+}
+
+.welcome-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -1454,6 +1479,10 @@ textarea.form-input {
   *,
   *::before,
   *::after {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -1500,4 +1529,91 @@ textarea.form-input {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.search-icon-button {
+  position: absolute;
+  z-index: 1;
+  left: 10px;
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #9ca3af;
+}
+
+.search-icon-button:hover {
+  color: var(--primary);
+}
+
+.search-icon-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.search-suggestions {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.14);
+}
+
+.search-suggestion {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  padding: 11px 13px;
+  color: var(--text);
+  text-align: left;
+}
+
+.search-suggestion:last-child {
+  border-bottom: 0;
+}
+
+.search-suggestion:hover,
+.search-suggestion:focus-visible {
+  background: #eef2ff;
+}
+
+.dark .search-suggestion:hover,
+.dark .search-suggestion:focus-visible {
+  background: rgba(79, 70, 229, 0.14);
+}
+
+.search-suggestion strong {
+  overflow: hidden;
+  width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
+}
+
+.search-suggestion span,
+.search-suggestion-empty {
+  overflow: hidden;
+  width: 100%;
+  color: #6b7280;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-suggestion-empty {
+  margin: 0;
+  padding: 12px 13px;
 }

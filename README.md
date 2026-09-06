@@ -89,7 +89,7 @@ Open `index.html` in a modern browser after building the stylesheet.
 
 ## Data Storage
 
-Focusly stores tasks, categories, initialization state, and theme preference in the browser's local storage. The application does not send task data to a backend or external API.
+Focusly stores tasks, categories, the user's name, and theme preference in the browser's local storage. The application does not send task data to a backend or external API.
 
 The local storage keys are:
 
@@ -97,14 +97,14 @@ The local storage keys are:
 | --- | --- |
 | `focusly-tasks` | Saved task data |
 | `focusly-categories` | Saved category names |
+| `focusly-user-name` | Saved user name |
 | `focusly-theme` | Light or dark theme preference |
-| `focusly-initialized` | Tracks initial demo data setup |
 
 ## Task Behavior
 
 Tasks are displayed with active tasks first. Within each status group, tasks are ordered by priority, due date, and creation time. Overdue tasks are visually identified, while tasks due on the current day receive a dedicated status indicator.
 
-The initial browser session includes demonstration tasks so the dashboard is immediately usable. The reset control restores the original demonstration data.
+Each new browser profile starts with an empty task list. On first use, Focusly asks for the user's name and stores it locally for the personalized greeting and profile badge.
 
 ## Interface Design
 
